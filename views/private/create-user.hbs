@@ -1,0 +1,36 @@
+<h1>Create users</h1>
+
+<form action="/create-user" method="POST">
+  <label for="username">Username:</label>
+  <input type="text" name="username" placeholder="Username" />
+  <br /><br />
+
+  <label for="name">Name:</label>
+  <input type="text" name="name" placeholder="Name" />
+  <br /><br />
+
+  <label for="password">Password:</label>
+  <input type="password" name="password" placeholder="********" />
+  <br /><br />
+
+  <label for="profileImg">Profile image:</label>
+  <input type="text" name="profileImg" placeholder="Profile image" />
+  <br /><br />
+
+  <label for="description">Description:</label>
+  <textarea name="description" placeholder="Description" rows="4" cols="50">
+  </textarea>
+  <br /><br />
+
+  <select name="role" id="role">
+    <option value=""></option>
+    <option value="BOSS">BOSS</option>
+    <option value="DEV">DEV</option>
+    <option value="TA">TA</option>
+    <option value="STUDENT">STUDENT</option>
+    <option value="GUEST">GUEST</option>
+  </select>
+  <br /><br />
+
+  <button type="submit">Create user</button>
+</form>

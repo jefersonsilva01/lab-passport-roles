@@ -1,0 +1,9 @@
+<h1>Users</h1>
+
+{{#each users}}
+  <form action="/user/{{id}}/delete" method="POST">
+    <span id="{{id}}">{{name}}</span>
+    <button type="submit">Delete</button>
+  </form>
+  <br /><br />
+{{/each}}
