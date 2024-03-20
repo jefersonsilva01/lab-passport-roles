@@ -1,12 +1,16 @@
-<h1>Create course</h1>
+<h1>Edit: {{course.title}}</h1>
 
-<form action="/create-course" method="POST">
+<form action="/course-edit/{{course._id}}" method="POST">
   <label for="title">Title:</label>
-  <input type="text" name="title" placeholder="Title" />
+  <input type="text" name="title" value="{{course.title}}" />
   <br /><br />
 
   <label for="leadTeacher">Lead teacher:</label>
   <select name="leadTeacher">
+    <option
+      value="{{course.leadTeacher.0._id}}"
+      selected
+    >{{course.leadTeacher.0.name}}</option>
     <option></option>
     {{#each TAs}}
       <option value="{{_id}}">{{name}}</option>
@@ -15,15 +19,16 @@
   <br /><br />
 
   <label for="startDate">Start date:</label>
-  <input type="date" name="startDate" />
+  <input type="date" name="startDate" value="{{course.startDate}}" />
   <br /><br />
 
   <label for="endDate">End date:</label>
-  <input type="date" name="endDate" />
+  <input type="date" name="endDate" value="{{course.endDate}}" />
   <br /><br />
 
-  <label for="ta">TA:</label>
-  <select name="ta">
+  <label for="TA">TA:</label>
+  <select name="TA">
+    <option value="{{course.ta.0_id}}" selected>{{course.ta.0.name}}</option>
     <option></option>
     {{#each TAs}}
       <option value="{{_id}}">{{name}}</option>
@@ -32,15 +37,21 @@
   <br /><br />
 
   <label for="courseImg">Course image:</label>
-  <input type="text" name="courseImg" />
+  <input type="text" name="courseImg" value="{{course.courseImg}}" />
   <br /><br />
 
   <label for="description">Description:</label>
-  <textarea type="text" name="description" rows="5" cols="30"></textarea>
+  <textarea
+    type="text"
+    name="description"
+    rows="5"
+    cols="30"
+  >{{course.description}}</textarea>
   <br /><br />
 
   <label for="status">Status:</label>
   <select name="status">
+    <option value="{{course.status}}">{{course.status}}</option>
     <option value="ON">ON</option>
     <option value="OFF">OFF</option>
   </select>
@@ -50,10 +61,13 @@
   <select name="students" multiple>
     <option></option>
     {{#each students}}
+      <option value="{{_id}}" selected>{{name}}</option>
+    {{/each}}
+    {{#each course.students}}
       <option value="{{_id}}">{{name}}</option>
     {{/each}}
   </select>
   <br /><br />
 
-  <button type="submit">Create course</button>
+  <button type="submit">Edit course</button>
 </form>

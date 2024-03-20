@@ -219,7 +219,6 @@ router.post('/login',
 );
 
 // Courses routes
-
 router.get('/courses', checkTA, (req, res) => {
   Course.find()
     .then(courses => {
@@ -231,7 +230,6 @@ router.get('/courses', checkTA, (req, res) => {
 router.get('/create-course', checkTA, (req, res) => {
   User.find({ $or: [{ role: 'TA' }, { role: 'STUDENT' }] }, { name: 1, _id: 1, role: 1 })
     .then(users => {
-      console.log(users);
       let students = [], TAs = [];
 
       users.forEach(element => {
@@ -242,6 +240,33 @@ router.get('/create-course', checkTA, (req, res) => {
       res.render('private/create-course', { students, TAs });
     })
     .catch(error => console.log(error));
+});
+
+router.get('/course-edit/:id', checkTA, (req, res) => {
+  const id = req.params.id;
+  let students = [], TAs = [];
+
+  User.find(
+    { $or: [{ role: 'TA' }, { role: 'STUDENT' }] },
+    { name: 1, _id: 1, role: 1 }
+  )
+    .then(users => {
+      users.forEach(element => {
+        if (element.role === 'STUDENT') students.push(element)
+        if (element.role === 'TA') TAs.push(element);
+      })
+
+      Course.findById({ _id: id })
+        .populate('leadTeacher')
+        .populate('ta')
+        .populate('students')
+        .then(course => {
+          console.log(course);
+          res.render('private/course-edit', { course, TAs, students })
+        })
+        .catch(error => res.redirect('/courses'));
+    })
+    .catch(error => res.redirect('/courses'));
 });
 
 router.post('/create-course', checkTA, (req, res) => {
@@ -257,9 +282,84 @@ router.post('/create-course', checkTA, (req, res) => {
     students
   } = req.body
 
-  res.redirect('/courses');
+  if (title === '') {
+    res.redirect('/create-course');
+  }
+
+  Course.findOne({ title })
+    .then(course => {
+      if (course !== null) {
+        res.redirect('/create-course');
+        return;
+      }
+
+      const newCourse = new Course({
+        title,
+        leadTeacher,
+        startDate,
+        endDate,
+        ta,
+        courseImg,
+        description,
+        status,
+        students
+      });
+
+      newCourse.save();
+      res.redirect('/courses');
+    })
+    .catch(error => {
+      res.redirect('/create-course');
+    });
+});
+
+router.post('/course/:id/delete', checkTA, (req, res) => {
+  const id = req.params.id;
+
+  Course.findByIdAndRemove({ _id: id })
+    .then(() => {
+      res.redirect('/courses');
+    })
+    .catch(error => {
+      console.log(error)
+      res.redirect('/courses');
+    })
 })
 
+router.post('/course-edit/:id', checkTA, (req, res) => {
+  const id = req.params.id;
+  const {
+    title,
+    leadTeacher,
+    startDate,
+    endDate,
+    ta,
+    courseImg,
+    description,
+    status,
+    students
+  } = req.body;
 
+  if (title === '') {
+    res.redirect(`/course-edit/${id}`)
+    return;
+  }
+
+  Course.updateOne({ _id: id }, {
+    title,
+    leadTeacher,
+    startDate,
+    endDate,
+    ta,
+    courseImg,
+    description,
+    status,
+    students
+  })
+    .then(() => {
+      res.redirect('/courses')
+    })
+    .catch(error => res.redirect('/courses'));
+});
 
 module.exports = router;
