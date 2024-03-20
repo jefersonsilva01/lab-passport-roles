@@ -1,0 +1,57 @@
+<h1>Edit {{newUser.name}}</h1>
+
+<form action="/user-edit/{{newUser._id}}" method="POST">
+  {{#if newUser.userRole}}
+    <select name="role" id="role">
+      <option value="{{newUser.role}}" selected>{{newUser.role}}</option>
+      <option value="DEV">DEV</option>
+      <option value="TA">TA</option>
+    </select>
+    <br /><br />
+
+    <button type="submit">Update user</button>
+
+  {{else}}
+    <label for="username">Username:</label>
+    <input type="text" name="username" value="{{newUser.username}}" />
+    <br /><br />
+
+    <label for="name">Name:</label>
+    <input type="text" name="name" value="{{newUser.name}}" />
+    <br /><br />
+
+    <label for="password">Password:</label>
+    <input type="password" name="password" placeholder="********" />
+    <br /><br />
+
+    <label for="profileImg">Profile image:</label>
+    <input type="text" name="profileImg" value="{{newUser.profileImg}}" />
+    <br /><br />
+
+    <label for="description">Description:</label>
+    <textarea
+      name="description"
+      value="{{newUser.description}}"
+      rows="4"
+      cols="50"
+    >
+    </textarea>
+    <br /><br />
+
+    <label for="facebookId">Facebook ID:</label>
+    <input type="text" name="facebookId" value="{{newUser.facebookId}}" />
+    <br /><br />
+
+    <select name="role" id="role">
+      <option value="{{newUser.role}}" selected>{{newUser.role}}</option>
+      <option value="BOSS">BOSS</option>
+      <option value="DEV">DEV</option>
+      <option value="TA">TA</option>
+      <option value="STUDENT">STUDENT</option>
+      <option value="GUEST">GUEST</option>
+    </select>
+    <br /><br />
+
+    <button type="submit">Update user</button>
+  {{/if}}
+</form>

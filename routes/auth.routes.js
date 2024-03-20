@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User.model');
+const Course = require('../models/Course.model');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const ensureLogin = require('connect-ensure-login');
@@ -7,12 +8,13 @@ const passport = require('passport');
 
 const bcryptSalt = 10;
 
-// add routes here
-router.get('/login', (req, res, next) => res.render('auth/login'));
-
-router.get('/private', ensureLogin.ensureLoggedIn(), (req, res) => {
-  res.render('private/private', { user: req.user })
-});
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  } else {
+    res.redirect('/login')
+  }
+}
 
 function checkRoles(role) {
   return function (req, res, next) {
@@ -24,25 +26,128 @@ function checkRoles(role) {
   }
 }
 
-const checkAdmin = checkRoles('BOSS');
+const checkBoss = checkRoles('BOSS');
+const checkTA = checkRoles('TA');
 
-router.get('/users', checkAdmin, (req, res) => {
+// add routes here
+router.get('/login', (req, res, next) => res.render('auth/login'));
+
+router.get('/private', ensureLogin.ensureLoggedIn(), (req, res) => {
+  res.render('private/private', { user: req.user })
+});
+
+router.get('/users', ensureAuthenticated, (req, res) => {
   User.find()
     .then(users => {
-      res.render('private/users', { users });
+      const newUser = [];
+
+      users.forEach(element => {
+        let el = { ...element._doc }
+        if (req.user.role === 'BOSS') el['userRole'] = 'BOSS';
+        newUser.push(el);
+      });
+
+      res.render('private/users', { newUser });
     })
     .catch(error => {
       res.render('private/create-user', {
         errorMessage: 'Something went wrong'
       });
     });
-})
+});
 
-router.get('/create-user', checkAdmin, (req, res) => {
+router.get('/user-details/:id', ensureAuthenticated, (req, res) => {
+  const id = req.params.id;
+
+  User.findById({ _id: id })
+    .then(user => {
+      let newUser = { ...user._doc }
+      if (id === req.user.id) {
+        newUser['userRole'] = 'BOSS';
+        res.render('private/user-details', { newUser });
+      } else if (req.user.role === 'BOSS') {
+        newUser['userRole'] = 'BOSS';
+        res.render('private/user-details', { newUser });
+      } else {
+        res.render('private/user-details', { newUser });
+      }
+    })
+    .catch(error => {
+      console.log(error);
+    });
+});
+
+router.get('/user-edit/:id', ensureAuthenticated, (req, res) => {
+  const id = req.params.id;
+
+  User.findById({ _id: id })
+    .then(user => {
+      let newUser = { ...user._doc };
+
+      if (id === req.user.id) {
+        res.render('private/user-edit', { newUser });
+      } else {
+        if (req.user.role === 'BOSS') newUser['userRole'] = 'BOSS'
+        res.render('private/user-edit', { newUser });
+      }
+
+    })
+    .catch(error => {
+      res.render('private/users');
+    });
+});
+
+router.get('/create-user', checkBoss, (req, res) => {
   res.render('private/create-user', { user: req.user });
 });
 
-router.post('/create-user', checkAdmin, (req, res) => {
+router.post('/user-edit/:id', ensureAuthenticated, (req, res) => {
+  const id = req.params.id;
+
+  let {
+    username,
+    name,
+    password,
+    profileImg,
+    description,
+    facebookId,
+    role
+  } = req.body
+
+  User.find({ _id: id })
+    .then(user => {
+      let salt
+      let hasPass
+
+      if (password === '') {
+        password = user.password
+      } else {
+        salt = bcrypt.genSaltSync(bcryptSalt);
+        hasPass = bcrypt.hashSync(password, salt);
+      };
+
+      User.updateOne({ _id: id }, {
+        username,
+        name,
+        password: hasPass,
+        profileImg,
+        description,
+        facebookId,
+        role
+      })
+        .then(() => {
+          res.redirect(`/user-details/${id}`)
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    })
+    .catch(error => {
+      console.log(error);
+    });
+});
+
+router.post('/create-user', checkBoss, (req, res) => {
   const {
     username,
     name,
@@ -94,7 +199,7 @@ router.post('/create-user', checkAdmin, (req, res) => {
     });
 });
 
-router.post('/user/:id/delete', checkAdmin, (req, res) => {
+router.post('/user/:id/delete', checkBoss, (req, res) => {
   const { id } = req.params;
 
   User.findByIdAndRemove({ _id: id })
@@ -112,5 +217,49 @@ router.post('/login',
     passReqToCallback: true
   })
 );
+
+// Courses routes
+
+router.get('/courses', checkTA, (req, res) => {
+  Course.find()
+    .then(courses => {
+      res.render('private/courses', { courses });
+    })
+    .catch(error => console.log(error));
+})
+
+router.get('/create-course', checkTA, (req, res) => {
+  User.find({ $or: [{ role: 'TA' }, { role: 'STUDENT' }] }, { name: 1, _id: 1, role: 1 })
+    .then(users => {
+      console.log(users);
+      let students = [], TAs = [];
+
+      users.forEach(element => {
+        if (element.role === 'STUDENT') students.push(element)
+        if (element.role === 'TA') TAs.push(element);
+      })
+
+      res.render('private/create-course', { students, TAs });
+    })
+    .catch(error => console.log(error));
+});
+
+router.post('/create-course', checkTA, (req, res) => {
+  const {
+    title,
+    leadTeacher,
+    startDate,
+    endDate,
+    ta,
+    courseImg,
+    description,
+    status,
+    students
+  } = req.body
+
+  res.redirect('/courses');
+})
+
+
 
 module.exports = router;

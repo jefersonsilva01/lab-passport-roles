@@ -1,0 +1,8 @@
+<h1>User: {{newUser.name}}</h1>
+<p>Image: {{newUser.profileImg}}</p>
+<p>Description: {{newUser.description}}</p>
+<p>Facebook ID: {{newUser.facebookId}}</p>
+<p>Role: {{newUser.role}}</p>
+{{#if newUser.userRole}}
+  <a href="/user-edit/{{newUser._id}}">Edit</a>
+{{/if}}
