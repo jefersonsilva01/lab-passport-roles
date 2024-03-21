@@ -14,6 +14,7 @@ const passport = require('passport');
 const localStrategy = require('passport-local');
 const User = require('./models/User.model');
 const flash = require('connect-flash');
+const FacebookStrategy = require('passport-facebook');
 
 mongoose
   .connect('mongodb://localhost/passport-roles')
@@ -82,6 +83,36 @@ passport.use(new localStrategy({
       next(error);
     });
 }));
+
+passport.use(new FacebookStrategy({
+  clientID: process.env.FACEBOOK_APP_ID,
+  clientSecret: process.env.FACEBOOK_APP_SECRET,
+  callbackURL: "http://localhost:3000/auth/facebook/callback",
+  state: true,
+  profileFields: ['name']
+},
+  function (accessToken, refreshToken, profile, cb) {
+    const id = profile.id;
+    const name = profile.name.givenName;
+
+    User.findOne({ facebookId: id })
+      .then(user => {
+        if (!user) {
+          const newUser = new User({ facebookId: id, name: name })
+
+          newUser.save()
+            .then(newUser => cb(null, newUser))
+            .catch(error => cb(error));
+        } else {
+          cb(null, user);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+        cb(error);
+      });
+  }
+));
 
 app.use(passport.initialize());
 app.use(passport.session());

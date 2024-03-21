@@ -37,23 +37,33 @@ router.get('/private', ensureLogin.ensureLoggedIn(), (req, res) => {
 });
 
 router.get('/users', ensureAuthenticated, (req, res) => {
-  User.find()
-    .then(users => {
-      const newUser = [];
+  if (req.user.role === 'GUEST') {
+    User.find({ role: 'GUEST' })
+      .then(newUser => {
+        res.render('private/users', { newUser })
+        console.log('passei');
+        return;
+      })
+      .catch(error => res.redirect('/private'));
+  } else {
+    User.find()
+      .then(users => {
+        const newUser = [];
 
-      users.forEach(element => {
-        let el = { ...element._doc }
-        if (req.user.role === 'BOSS') el['userRole'] = 'BOSS';
-        newUser.push(el);
-      });
+        users.forEach(element => {
+          let el = { ...element._doc }
+          if (req.user.role === 'BOSS') el['userRole'] = 'BOSS';
+          newUser.push(el);
+        });
 
-      res.render('private/users', { newUser });
-    })
-    .catch(error => {
-      res.render('private/create-user', {
-        errorMessage: 'Something went wrong'
+        res.render('private/users', { newUser });
+      })
+      .catch(error => {
+        res.render('private/create-user', {
+          errorMessage: 'Something went wrong'
+        });
       });
-    });
+  }
 });
 
 router.get('/user-details/:id', ensureAuthenticated, (req, res) => {
@@ -228,12 +238,13 @@ router.get('/courses', checkTA, (req, res) => {
 })
 
 router.get('/create-course', checkTA, (req, res) => {
-  User.find({ $or: [{ role: 'TA' }, { role: 'STUDENT' }] }, { name: 1, _id: 1, role: 1 })
+  User.find({ $or: [{ role: 'TA' }, { role: 'STUDENT' }, { role: 'GUEST' }] }, { name: 1, _id: 1, role: 1 })
     .then(users => {
       let students = [], TAs = [];
 
       users.forEach(element => {
         if (element.role === 'STUDENT') students.push(element)
+        if (element.role === 'GUEST') students.push(element);
         if (element.role === 'TA') TAs.push(element);
       })
 
@@ -247,12 +258,13 @@ router.get('/course-edit/:id', checkTA, (req, res) => {
   let students = [], TAs = [];
 
   User.find(
-    { $or: [{ role: 'TA' }, { role: 'STUDENT' }] },
+    { $or: [{ role: 'TA' }, { role: 'STUDENT' }, { role: 'GUEST' }] },
     { name: 1, _id: 1, role: 1 }
   )
     .then(users => {
       users.forEach(element => {
         if (element.role === 'STUDENT') students.push(element)
+        if (element.role === 'GUEST') students.push(element);
         if (element.role === 'TA') TAs.push(element);
       })
 
@@ -361,5 +373,20 @@ router.post('/course-edit/:id', checkTA, (req, res) => {
     })
     .catch(error => res.redirect('/courses'));
 });
+
+//Facebook login
+
+router.get('/auth/facebook',
+  passport.authenticate('facebook'));
+
+router.get('/auth/facebook/callback',
+  passport.authenticate('facebook', {
+    failureRedirect: '/login',
+    successRedirect: '/private',
+    failureFlash: true,
+    passReqToCallback: true
+  })
+);
+
 
 module.exports = router;

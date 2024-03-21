@@ -2,7 +2,8 @@
 
 {{#each newUser}}
   <form action="/user/{{_id}}/delete" method="POST">
-    <a href="/user-details/{{_id}}">{{name}}</>
+    <a href="/user-details/{{_id}}">User name: {{name}}</>
+    <p>Facebook ID: {{facebookId}}</p>
 
     {{#if userRole}}
       <button type="submit">Delete</button>
